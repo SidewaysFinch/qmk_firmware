@@ -22,7 +22,7 @@
 // #define KEYBOARD_REMOTE // Force remote mode
 
 // Workaround for freezing after MacOS sleep
-#define NO_USB_STARTUP_CHECK
+// #define NO_USB_STARTUP_CHECK
 
 /* USB Device descriptor parameter */
 #define VENDOR_ID       0x6E61
@@ -53,9 +53,14 @@
 /* Optional SMT LED pins */
 #define RGB_DI_PIN E6
 #define RGBLED_NUM 10
-#define RGBLIGHT_ANIMATIONS
+#define RGBLIGHT_EFFECT_BREATHING
 #define RGBLIGHT_SLEEP
 
 /* Optional encoder pins */
 #define ENCODERS_PAD_A { B5 }
 #define ENCODERS_PAD_B { B4 }
+
+/* Leader key defines. */
+#define LEADER_NO_TIMEOUT       /* Leader key itself won't time out. Timing resumes for each key after. */
+#define LEADER_PER_KEY_TIMING   /* Each key resets the timer. */
+#define LEADER_TIMEOUT 250      /* Timeout in ms. */

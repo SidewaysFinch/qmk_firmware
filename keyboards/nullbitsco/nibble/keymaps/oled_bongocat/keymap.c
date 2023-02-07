@@ -15,77 +15,98 @@
  *
  * Original: j-inc's kyria keymap
  */
-#include QMK_KEYBOARD_H
+#include "../../nibble.h" //QMK_KEYBOARD_H
 #include "animation_frames.h"
 
-enum layer_names {
-  _BASE,
-  _VIA1,
-  _VIA2,
-  _VIA3
-};
+LEADER_EXTERNS();
 
+/* Keybind for Discord mutes. */
 #define KC_DISC_MUTE KC_F23
-#define KC_DISC_DEAF KC_F24
 
+/* Default RGB Color. */
+#define RGBLIGHT_DEFAULT_HUE 212
+#define RGBLIGHT_DEFAULT_SAT 62
+#define RGBLIGHT_DEFAULT_VAL 153
+
+/* Controller Color. */
+#define RGB_CONTROLLER_R 255
+#define RGB_CONTROLLER_G 95
+#define RGB_CONTROLLER_B 1
+
+/* VIA layer names. */
+enum layer_names {
+    _BASE,
+    _VIA1,
+    _VIA2,
+    _VIA3
+};
+
+/* Custom Keycodes. */
 enum custom_keycodes {
-  PROG = USER00,
-  DISC_MUTE,
-  DISC_DEAF,
-  SUPER_ALT_TAB,
-  _NUM_CUST_KCS,
+    PROG = SAFE_RANGE,
+    DISC_MUTE,
 };
 
-// Macro variables
-bool is_alt_tab_active = false;
-uint16_t alt_tab_timer = 0;
-bool muted = false;
-bool deafened = false;
+/* Macro variables. */
+bool muted = false;         /* Discord muted. */
+bool controllerMode = false;
 
+/* Keymap Layer definition. */
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
-  [_BASE] = LAYOUT_all(
-              KC_GESC, KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_MINS, KC_EQL,  KC_BSPC, KC_GRAVE,
-    KC_F13,   KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_LBRC, KC_RBRC, KC_BSLS, KC_DEL,
-    KC_F14,   KC_CAPS, KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,          KC_ENT,  KC_HOME,
-    KC_F15,   KC_LSFT, KC_NUBS, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_RSFT, KC_UP,   KC_END,
-    KC_F16,   KC_LCTL, KC_LGUI, KC_LALT,                            KC_SPC,                  MO(_VIA1), KC_RALT, KC_RCTL, KC_LEFT, KC_DOWN, KC_RGHT
-  ),
+    /* Default layer. */
+    [_BASE] = LAYOUT_all(
+                  KC_GRAVE,   KC_1,       KC_2,       KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,      KC_0,    KC_MINS, KC_EQL,    KC_BSPC, KC_LEAD,
+      DISC_MUTE,  KC_TAB,     KC_Q,       KC_W,       KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,      KC_P,    KC_LBRC, KC_RBRC,   KC_BSLS, KC_DEL,
+      KC_LEAD,    KC_ESC,     KC_A,       KC_S,       KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,      KC_SCLN, KC_QUOT,            KC_ENT,  KC_HOME,
+      KC_F2,      KC_LSFT,    KC_NUBS,    KC_Z,       KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM,   KC_DOT,  KC_SLSH, KC_RSFT,   KC_UP,   KC_END,
+      KC_F1,      KC_LCTL,    KC_LGUI,    KC_LALT,                               KC_SPC,                    MO(_VIA1), KC_RALT, KC_RCTL, KC_LEFT,   KC_DOWN, KC_RGHT
+    ),
 
-  [_VIA1] = LAYOUT_all(
-              RESET,   KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,  _______,  KC_END,
-    RGB_TOG,  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-    _______,  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______, _______,
-    _______,  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-    _______,  _______, _______, _______,                            _______,                   _______, _______, _______, KC_MPRV, KC_MPLY, KC_MNXT
-  ),
+    /* FN Layer. */
+    [_VIA1] = LAYOUT_all(
+                RESET,   KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,  _______, _______,
+      _______,  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_INS,
+      _______,  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______, KC_PGUP,
+      _______,  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_PGDN,
+      _______,  _______, _______, _______,                            _______,                   _______, _______, _______, KC_MPRV, KC_MPLY, KC_MNXT
+    ),
 
-  [_VIA2] = LAYOUT_all(
-              _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-    _______,  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-    _______,  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______, _______,
-    _______,  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-    _______,  _______, _______, _______,                            _______,                   _______, _______, _______, _______, _______, _______
-  ),
+    /* Controller layer. Leader key + KC_2. */
+    [_VIA2] = LAYOUT_all(
+                KC_ESC, _______, _______, _______, _______, _______, _______, _______, _______,  _______, _______, _______, _______,  _______, _______,
+      _______,  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,  _______, _______,
+      _______,  KC_CAPS, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,           _______, _______,
+      _______,  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,  _______, _______,
+      _______,  _______, _______, _______,                            _______,                   _______, _______, _______, _______,  _______, _______
+    ),
 
-  [_VIA3] = LAYOUT_all(
-              _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-    _______,  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-    _______,  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______, _______,
-    _______,  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
-    _______,  _______, _______, _______,                            _______,                   _______, _______, _______, _______, _______, _______
-  ),
+    /* Regular modifiers layer. Leader key + KC_1. */
+    [_VIA3] = LAYOUT_all(
+                KC_ESC, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+      _______,  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+      _______,  KC_CAPS, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______, _______,
+      _______,  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
+      _______,  _______, _______, _______,                            _______,                   _______, _______, _______, _______, _______, _______
+    ),
 
 };
 
+/* Handle encoder behaviour. */
 bool encoder_update_user(uint8_t index, bool clockwise) {
+    /* Use encoder as a volume or scroll wheel depending on FN layer. */
     if (clockwise) {
         tap_code(KC_WH_D);
-    } else {
+    }
+    else {
         tap_code(KC_WH_U);
     }
     return true;
 }
 
+/* ----------------------
+ *    OLED CODE BEGIN
+ * ----------------------
+ */
 #ifdef OLED_ENABLE
 #define IDLE_FRAME_DURATION 200 // Idle animation iteration rate in ms
 
@@ -172,9 +193,14 @@ bool oled_task_user(void) {
     return false;
 }
 #endif
+/* ----------------------
+ *     OLED CODE END
+ * ----------------------
+ */
 
-// Animate tap
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+
+    /* Animate OLED Tap. */
     #ifdef OLED_ENABLE
     // Check if non-mod
     if ((keycode >= KC_A && keycode <= KC_0) || (keycode >= KC_TAB && keycode <= KC_SLASH)) {
@@ -190,7 +216,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     }
     #endif
 
+    /* Handle other keyboards. */
     switch(keycode) {
+        /* Jump to bootloader. */
         case PROG:
           if (record->event.pressed) {
             rgblight_disable_noeeprom();
@@ -201,11 +229,13 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
           }
         break;
 
+        /* Mute on discord. */
         case DISC_MUTE:
           if (record->event.pressed) {
             tap_code(KC_DISC_MUTE);
             if (!rgblight_is_enabled()) break;
 
+            /* Toggle red light. */
             if (muted) {
               rgblight_enable_noeeprom();
             } else {
@@ -217,35 +247,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
           }
         break;
 
-        case DISC_DEAF:
-          if (record->event.pressed) {
-            tap_code(KC_DISC_DEAF);
-            if (!rgblight_is_enabled()) break;
-
-            if (deafened) {
-              rgblight_enable_noeeprom();
-            } else {
-              rgblight_timer_disable();
-              uint8_t val = rgblight_get_val();
-              rgblight_sethsv_range(255, 255, val, 0, RGBLED_NUM-1);
-            }
-            deafened = !deafened;
-          }
-        break;
-
-        case SUPER_ALT_TAB:
-          if (record->event.pressed) {
-            if (!is_alt_tab_active) {
-              is_alt_tab_active = true;
-              register_code(KC_LALT);
-            }
-            alt_tab_timer = timer_read();
-            register_code(KC_TAB);
-          } else {
-            unregister_code(KC_TAB);
-          }
-          break;
-
         default:
         break;
     }
@@ -254,10 +255,66 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 }
 
 void matrix_scan_user(void) {
-  if (is_alt_tab_active) {
-    if (timer_elapsed(alt_tab_timer) > 1000) {
-      unregister_code(KC_LALT);
-      is_alt_tab_active = false;
+    /* Handle leader key operations. */
+    LEADER_DICTIONARY() {
+        leading = false;
+        leader_end();
+
+        /* Toggle swap grave/escape layer. */
+        SEQ_ONE_KEY(KC_1) {
+            layer_invert(_VIA3);
+        }
+        /* Toggle GCN controller layer. */
+        SEQ_ONE_KEY(KC_2) {
+            layer_invert(_VIA2);
+            controllerMode ^= 1;
+
+            /* Set controller light to a different layer. */
+            if (controllerMode) {
+                rgblight_setrgb_range(RGB_CONTROLLER_R, RGB_CONTROLLER_G, RGB_CONTROLLER_B, 0, RGBLED_NUM);
+            }
+            else {
+                rgblight_sethsv_range(RGBLIGHT_DEFAULT_HUE, RGBLIGHT_DEFAULT_SAT, RGBLIGHT_DEFAULT_VAL, 0, RGBLED_NUM);
+            }
+        }
+        /* Touch capslock. */
+        SEQ_ONE_KEY(KC_ESC) {
+            tap_code(KC_CAPS);
+        }
+        /* Alt+F4. */
+        SEQ_TWO_KEYS(KC_W, KC_Q) {
+            register_code(KC_LALT);
+            register_code(KC_F4);
+            unregister_code(KC_LALT);
+            unregister_code(KC_F4);
+        }
+        /* PR note [Nit]. */
+        SEQ_TWO_KEYS(KC_R, KC_N) {
+            SEND_STRING("[Nit] ");
+        }
+        /* PR note [Question]. */
+        SEQ_TWO_KEYS(KC_R, KC_Q) {
+            SEND_STRING("[Question] ");
+        }
+        /* PR note [Suggestion]. */
+        SEQ_TWO_KEYS(KC_R, KC_S) {
+            SEND_STRING("[Suggestion] ");
+        }
+        /* PR note [Minor]. */
+        SEQ_TWO_KEYS(KC_R, KC_M) {
+            SEND_STRING("[Minor] ");
+        }
+        /* PR note [Major]. */
+        SEQ_THREE_KEYS(KC_R, KC_M, KC_A) {
+            SEND_STRING("[Major] ");
+        }
     }
-  }
+}
+
+void leader_start(void) {
+    rgblight_mode(RGBLIGHT_MODE_BREATHING + 3);
+}
+
+void leader_end(void) {
+    rgblight_mode(RGBLIGHT_MODE_STATIC_LIGHT);
 }
