@@ -1,4 +1,4 @@
-/* Copyright 2021 Jonathan Law, Jay Greco
+/* Copyright 2021 Jay Greco
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -12,10 +12,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Original: j-inc's kyria keymap
  */
-#include "../../nibble.h" //QMK_KEYBOARD_H
+#include QMK_KEYBOARD_H
 #include "animation_frames.h"
 
 /* Keybind for Discord mutes. */
@@ -25,18 +23,14 @@
 #define KC_SNAP_LEFT    KC_A
 #define KC_SNAP_RIGHT   KC_D
 
-/* Default RGB Color. */
-#define RGBLIGHT_DEFAULT_HSV 212, 62, 153
-
-/* VIA layer names. */
+/* Layer Names. */
 enum layer_names {
     _BASE,
-    _VIA1,
-    _VIA2,
-    _VIA3
+    _FN,
+    _MOUSEKEYS,
+    _GAMING,
 };
 
-/* Custom Keycodes. */
 enum custom_keycodes {
     PROG = SAFE_RANGE,
     DISC_MUTE,
@@ -44,6 +38,21 @@ enum custom_keycodes {
     SNAP_DOWN,
     SNAP_LEFT,
     SNAP_RIGHT,
+};
+
+typedef struct snaptapPair
+{
+    int keycodeA;
+    bool statusA;
+    int keycodeB;
+    bool statusB;
+    bool statusBlock;
+} snaptapPair;
+
+
+snaptapPair snapDict[2] = {
+    {KC_SNAP_UP, false, KC_SNAP_DOWN, false, false},
+    {KC_SNAP_LEFT, false, KC_SNAP_RIGHT, false, false}
 };
 
 /* Macro variables. */
@@ -150,16 +159,16 @@ bool oled_task_user(void) {
 /* Keymap Layer definition. */
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     /* Default layer. */
-    [_BASE] = LAYOUT_ansi(
+    [_BASE] = LAYOUT_all(
                   KC_GRAVE,   KC_1,       KC_2,       KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,      KC_0,    KC_MINS, KC_EQL,    KC_BSPC, QK_LEAD,
       DISC_MUTE,  KC_TAB,     KC_Q,       KC_W,       KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,      KC_P,    KC_LBRC, KC_RBRC,   KC_BSLS, KC_DEL,
       QK_LEAD,    KC_ESC,     KC_A,       KC_S,       KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,      KC_SCLN, KC_QUOT,            KC_ENT,  KC_HOME,
       KC_F2,      KC_LSFT,    KC_NUBS,    KC_Z,       KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM,   KC_DOT,  KC_SLSH, KC_RSFT,   KC_UP,   KC_END,
-      KC_F1,      KC_LCTL,    KC_LGUI,    KC_LALT,                               KC_SPC,                    MO(_VIA1), KC_RALT, KC_RCTL, KC_LEFT,   KC_DOWN, KC_RGHT
+      KC_F1,      KC_LCTL,    KC_LGUI,    KC_LALT,                               KC_SPC,                    MO(_FN), KC_RALT, KC_RCTL, KC_LEFT,   KC_DOWN, KC_RGHT
     ),
 
     /* FN Layer. */
-    [_VIA1] = LAYOUT_all(
+    [_FN] = LAYOUT_all(
                 QK_BOOT,   KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,  _______, _______,
       _______,  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_INS,
       _______,  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______, KC_PGUP,
@@ -168,7 +177,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
 
     /* Mousekeys layer. Leader key + KC_2. */
-    [_VIA2] = LAYOUT_all(
+    [_MOUSEKEYS] = LAYOUT_all(
                 KC_ESC, _______, _______, _______, _______, _______, _______, _______, _______,  _______, _______, _______, _______,  _______, _______,
       _______,  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,  _______, _______,
       _______,  KC_CAPS, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,           _______, _______,
@@ -177,7 +186,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
 
     /* Regular modifiers layer. Leader key + KC_1. */
-    [_VIA3] = LAYOUT_all(
+    [_GAMING] = LAYOUT_all(
                 _______, _______,   _______,    _______,    _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
       _______,  _______, _______,   SNAP_UP,    _______,    _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
       _______,  _______, SNAP_LEFT, SNAP_DOWN,  SNAP_RIGHT, _______, _______, _______, _______, _______, _______, _______, _______,          _______, _______,
@@ -202,33 +211,90 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
 }
 
 void snapTapStatus(int keyCode, bool enable) {
-    int statusIndex = 0;
+    // int statusIndex = 0;
 
-    switch (keyCode) {
-        case KC_SNAP_UP:
-            statusIndex = 0;
-            break;
-        case KC_SNAP_DOWN:
-            statusIndex = 1;
-            break;
-        case KC_SNAP_LEFT:
-            statusIndex = 2;
-            break;
-        case KC_SNAP_RIGHT:
-            statusIndex = 3;
-            break;
-        default:
-            break;
-    }
+    // switch (keyCode) {
+    //     case KC_SNAP_UP:
+    //         statusIndex = 0;
+    //         break;
+    //     case KC_SNAP_DOWN:
+    //         statusIndex = 1;
+    //         break;
+    //     case KC_SNAP_LEFT:
+    //         statusIndex = 2;
+    //         break;
+    //     case KC_SNAP_RIGHT:
+    //         statusIndex = 3;
+    //         break;
+    //     default:
+    //         break;
+    // }
 
     /* Set snap status and un/press the key. */
     if (enable) {
-        snapStatus[statusIndex] = true;
+        // snapStatus[statusIndex] = true;
         register_code(keyCode);
     }
     else {
-        snapStatus[statusIndex] = false;
+        // snapStatus[statusIndex] = false;
         unregister_code(keyCode);
+    }
+}
+
+void handleSnapTap(int pairNo, bool keyA, keyrecord_t *record) {
+    int*  keycodeX;
+    bool* statusX;
+    int*  keycodeY;
+    bool* statusY;
+    bool* statusBlock;
+
+    /* Determine which of the pair is being handled here. */
+    if (keyA == true) {
+        keycodeX = &snapDict[pairNo].keycodeA;
+        statusX = &snapDict[pairNo].statusA;
+        keycodeY = &snapDict[pairNo].keycodeB;
+        statusY = &snapDict[pairNo].statusB;
+        statusBlock = &snapDict[pairNo].statusBlock;
+    }
+    else {
+        keycodeX = &snapDict[pairNo].keycodeB;
+        statusX = &snapDict[pairNo].statusB;
+        keycodeY = &snapDict[pairNo].keycodeA;
+        statusY = &snapDict[pairNo].statusA;
+        statusBlock = &snapDict[pairNo].statusBlock;
+    }
+
+    /* Determine whether keyX was pressed. */
+    if (record->event.pressed) {
+        /* Set keyX as pressed. */
+        (*statusX) = true;
+
+        /* Do nothing if blocked. */
+        if ((*statusBlock) == true) {
+            return;
+        }
+
+        /* If keyY already pressed, unsend and block keyY. */
+        if ((*statusY) == true) {
+            unregister_code((*keycodeY));
+            (*statusBlock) = true;
+        }
+
+        /* If not blocked, send keyX */
+        register_code((*keycodeX));
+    }
+    else {
+        /* Set keyX as unpressed. */
+        (*statusX) = false;
+
+        /* If keyY still pressed from our blocked state, re-send keyY. */
+        if ((*statusBlock) == true && (*statusY) == true) {
+            register_code((*keycodeY));
+        }
+
+        /* Unpress keyX, and unblock the pair. */
+        unregister_code((*keycodeX));
+        (*statusBlock) = false;
     }
 }
 
@@ -237,7 +303,7 @@ void snapTapStatus(int keyCode, bool enable) {
  */
 void process_rgb_layers(void) {
     /* Set Base Layer RGB. */
-    rgblight_sethsv_noeeprom(RGBLIGHT_DEFAULT_HSV);
+    rgblight_sethsv_noeeprom(RGBLIGHT_DEFAULT_HUE, RGBLIGHT_DEFAULT_SAT, RGBLIGHT_DEFAULT_VAL);
 
     /* Set mute LED. */
     if (muted) {
@@ -245,16 +311,22 @@ void process_rgb_layers(void) {
     }
 
     /* Set controller LEDs. */
-    if (layer_state_is(_VIA2)) {
+    if (layer_state_is(_MOUSEKEYS)) {
         rgblight_sethsv_range(HSV_ORANGE, 4, 6);
     }
 
     /* Set modifier LEDs. */
-    if (layer_state_is(_VIA3)) {
+    if (layer_state_is(_GAMING)) {
         rgblight_sethsv_range(HSV_PURPLE, 6, 9);
     }
 }
 
+/*!
+ * @brief   Init RGB Post boot.
+ */
+void keyboard_post_init_user(void) {
+    process_rgb_layers();
+}
 
 /*!
  * @brief   Handle any code before key event.
@@ -299,88 +371,20 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         break;
 
         case SNAP_UP:
-            if (record->event.pressed) {
-                /* Do nothing if blocked. */
-                if (snapUDblock == true) {
-                    break;
-                }
-
-                /* If other key already pressed, disable that key. */
-                if (snapStatus[1] == true) {
-                    snapTapStatus(KC_SNAP_DOWN, false);
-                    snapUDblock = true;
-                }
-
-                snapTapStatus(KC_SNAP_UP, true);
-            }
-            else {
-                /* Unpress the key, and unblock the pair. */
-                snapTapStatus(KC_SNAP_UP, false);
-                snapUDblock = false;
-            }
+            handleSnapTap(0,true,record);
+        break;
 
         case SNAP_DOWN:
-            if (record->event.pressed) {
-                /* Do nothing if blocked. */
-                if (snapUDblock == true) {
-                    break;
-                }
-
-                /* If other key already pressed, disable that key. */
-                if (snapStatus[0] == true) {
-                    snapTapStatus(KC_SNAP_UP, false);
-                    snapUDblock = true;
-                }
-
-                snapTapStatus(KC_SNAP_DOWN, true);
-            }
-            else {
-                /* Unpress the key, and unblock the pair. */
-                snapTapStatus(KC_SNAP_DOWN, false);
-                snapUDblock = false;
-            }
+            handleSnapTap(0,false,record);
+        break;
 
         case SNAP_LEFT:
-            if (record->event.pressed) {
-                /* Do nothing if blocked. */
-                if (snapLRblock == true) {
-                    break;
-                }
-
-                /* If other key already pressed, disable that key. */
-                if (snapStatus[3] == true) {
-                    snapTapStatus(KC_SNAP_RIGHT, false);
-                    snapLRblock = true;
-                }
-
-                snapTapStatus(KC_SNAP_LEFT, true);
-            }
-            else {
-                /* Unpress the key, and unblock the pair. */
-                snapTapStatus(KC_SNAP_LEFT, false);
-                snapLRblock = false;
-            }
+            handleSnapTap(1,true,record);
+        break;
 
         case SNAP_RIGHT:
-            if (record->event.pressed) {
-                /* Do nothing if blocked. */
-                if (snapLRblock == true) {
-                    break;
-                }
-
-                /* If other key already pressed, disable that key. */
-                if (snapStatus[2] == true) {
-                    snapTapStatus(KC_SNAP_LEFT, false);
-                    snapLRblock = true;
-                }
-
-                snapTapStatus(KC_SNAP_RIGHT, true);
-            }
-            else {
-                /* Unpress the key, and unblock the pair. */
-                snapTapStatus(KC_SNAP_RIGHT, false);
-                snapLRblock = false;
-            }
+            handleSnapTap(1,false,record);
+        break;
 
         default:
         break;
@@ -406,13 +410,13 @@ void leader_start_user(void) {
  * @brief   Run code when leader sequence ends.
  */
 void leader_end_user(void) {
-        /* Toggle swap grave/escape layer. */
+        /* Toggle swap Gaming layer. */
         if (leader_sequence_one_key(KC_1)) {
-            layer_invert(_VIA3);
+            layer_invert(_GAMING);
         }
         /* Toggle Mousekeys controller layer. */
         else if (leader_sequence_one_key(KC_2)) {
-            layer_invert(_VIA2);
+            layer_invert(_MOUSEKEYS);
         }
         /* Touch capslock. */
         else if (leader_sequence_one_key(KC_ESC)) {

@@ -40,9 +40,14 @@
 
 /* Optional SMT LED pins */
 #define RGB_DI_PIN E6
-#define RGBLED_NUM 10
+#define RGBLIGHT_LED_COUNT 10
 #define RGBLIGHT_EFFECT_BREATHING
 #define RGBLIGHT_SLEEP
+
+#define RGBLIGHT_DEFAULT_MODE RGBLIGHT_MODE_STATIC_LIGHT
+#define RGBLIGHT_DEFAULT_HUE 212 // Sets the default hue value, if none has been set
+#define RGBLIGHT_DEFAULT_SAT 62 // Sets the default saturation value, if none has been set
+#define RGBLIGHT_DEFAULT_VAL 153 // Sets the default brightness value, if none has been set
 
 /* Optional encoder pins */
 #define ENCODERS_PAD_A { B5 }
